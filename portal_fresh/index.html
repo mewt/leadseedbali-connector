@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <title></title>
+    <meta name="viewport" content="initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Expires" content="0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Cache-Control" content="no-cache" />
+    <meta http-equiv="Cache" content="no-cache" />
+
+    <link rel="icon" href="./img/favicon.ico" />
+    <link rel="stylesheet" type="text/css" href="./css/index.css" />
+  </head>
+
+  <body cz-shortcut-listen="true">
+    <div class="body-loading" id="body_loading">
+      <img src="./img/loading.gif" style="width: 320px; height: 240px" />
+    </div>
+
+    <div class="body-wrapper">
+      <div class="body-background">
+        <div class="body-background-mask"></div>
+      </div>
+
+      <div class="body-content-wrapper">
+        <div class="body-content" id="body_content">
+        <div class="login-card">
+          <div class="brand-section">
+            <img class="brand-logo" src="./img/logo-seed.PNG" alt="THE SEED logo" />
+            <div class="brand-subtitle">STAY CONNECTED TO THE SEED</div>
+          </div>
+
+          <div class="login-form-wrapper">
+            <div class="login-form-title"></div>
+
+            <div class="login-item login-item-pass hide">
+              <input
+                class="rj-input"
+                type="text"
+                id="full_name"
+                data-i18n-placeholder="full_name"
+              />
+            </div>
+            <div class="login-item login-item-pass hide">
+              <input
+                class="rj-input"
+                type="email"
+                id="email_input"
+                data-i18n-placeholder="email"
+              />
+            </div>
+          </div>
+
+          <div class="checkbox-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="receive_offers" />
+              <span class="checkbox-custom"></span>
+              Receive invitations and curated offerings
+            </label>
+          </div>
+
+          <div class="login-msg" id="login_msg"></div>
+
+          <div class="login-button-wrapper">
+            <button
+              class="rj-btn rj-btn-primary login-btn"
+              id="login_btn"
+              data-i18n="login"
+            ></button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="./js/jquery/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/language.js"></script>
+    <script type="text/javascript" src="./js/i18n/i18n.js"></script>
+    <script type="text/javascript" src="./js/index.js"></script>
+    <script type="text/javascript" src="./loadConfig.json"></script>
+
+    <script type="text/javascript">
+    </script>
+  </body>
+</html>
