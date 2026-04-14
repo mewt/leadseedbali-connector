@@ -1,7 +1,7 @@
 // ============================================
 // CONFIGURATION - SET YOUR GOOGLE SHEETS WEBHOOK URL HERE
 // ============================================
-const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxnIjMaKGCBF5txvZLrFJPbvluUO59T_-yqaoaOvKEbWKYEt7L1HBKliCctQDHRfFBtgw/exec";
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzjiTbMIWjAjTvzpqX8QvXhGNDbOIKJms5ueBcOAMPCzmrMA5gAUmfjYpDKpUfgDupF3g/exec";
 
 // ============================================
 function loadConfig(data) {
@@ -126,28 +126,35 @@ const IndexObj = {
     const $btn = $("#login_btn");
     $btn.prop("disabled", true).text("Connecting...");
 
-    // Step 1: Send data to Google Sheets webhook
-    $.ajax({
-      url: WEBHOOK_URL,
-      method: "POST",
-      contentType: "text/plain",
-      data: JSON.stringify({
-        fullName: fullName,
-        email: email,
-        receiveOffers: receiveOffers,
-        timestamp: new Date().toISOString()
-      }),
-      timeout: 10000
-    })
-    .done(function() {
-      // Step 2: After data saved, trigger Ruijie one-click auth
-      IndexObj.triggerRuijieAuth();
-    })
-    .fail(function(xhr, status, error) {
-      // Even if webhook fails, still try to connect (don't block user)
-      console.warn("Webhook failed, continuing auth:", error);
-      IndexObj.triggerRuijieAuth();
+    // Send data to Google Sheets via GET (avoid CORS/POST redirect issues)
+    const params = new URLSearchParams({
+      fullName: fullName,
+      email: email,
+      receiveOffers: receiveOffers.toString(),
+      timestamp: new Date().toISOString()
     });
+
+    const webhookUrl = WEBHOOK_URL + "?" + params.toString();
+
+    // iOS Safari workaround: use hidden image + sendBeacon for reliability
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+
+    if (isIOS || isSafari) {
+      // iOS Safari: use hidden image trick (most reliable)
+      var img = new Image();
+      img.src = webhookUrl;
+      // Longer delay for iOS Safari
+      setTimeout(() => IndexObj.triggerRuijieAuth(), 1000);
+    } else if (navigator.sendBeacon) {
+      navigator.sendBeacon(webhookUrl);
+      setTimeout(() => IndexObj.triggerRuijieAuth(), 500);
+    } else {
+      // Fallback: fetch with no-cors
+      fetch(webhookUrl, { method: "GET", mode: "no-cors" })
+        .catch(() => {})
+        .finally(() => IndexObj.triggerRuijieAuth());
+    }
   },
 
   triggerRuijieAuth() {
