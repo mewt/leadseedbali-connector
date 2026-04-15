@@ -57,15 +57,15 @@ body {
 }
 
 .rj-input::-webkit-input-placeholder {
-  color: rgba(255, 255, 255 0.25);
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .rj-input::-moz-placeholder {
-  color: rgba(255, 255, 255 0.25);
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .rj-input:-ms-input-placeholder {
-  color: rgba(255, 255, 255 0.25);
+  color: rgba(255, 255, 255, 0.25);
 }
 
 
@@ -337,6 +337,15 @@ body {
   text-align: center;
   min-height: 20px;
   margin-bottom: 10px;
+}
+
+.field-error {
+  color: #ff7675;
+  font-size: 12px;
+  text-align: left;
+  padding-left: 24px;
+  margin-top: 4px;
+  min-height: 16px;
 }
 
 .login-btn {

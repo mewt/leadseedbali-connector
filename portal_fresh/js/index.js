@@ -1,7 +1,7 @@
 // ============================================
 // CONFIGURATION - SET YOUR GOOGLE SHEETS WEBHOOK URL HERE
 // ============================================
-const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzjiTbMIWjAjTvzpqX8QvXhGNDbOIKJms5ueBcOAMPCzmrMA5gAUmfjYpDKpUfgDupF3g/exec";
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwVx_RS9FlguStL4OIA3ZPiihp8JYwMUFeIJMc7rcP3_2fkPdGeQeY0ST90HPb2usmKFA/exec";
 
 // ============================================
 function loadConfig(data) {
@@ -36,6 +36,14 @@ const IndexObj = {
     const self = this;
     $("#login_btn").on("click", function () {
       self.onLogin();
+    });
+
+    // Live validation on blur and input
+    $("#full_name").on("blur input", function () {
+      self.validateName($(this).val().trim());
+    });
+    $("#email_input").on("blur input", function () {
+      self.validateEmail($(this).val().trim());
     });
   },
 
@@ -72,6 +80,82 @@ const IndexObj = {
   },
 
   renderHtmlLang: function () {},
+
+  validateName: function (fullName) {
+    const $error = $("#name_error");
+    $error.text("");
+
+    if (!fullName) {
+      $error.text(I18nObj.$t("please_enter_full_name"));
+      return false;
+    }
+    if (fullName.length < 3) {
+      $error.text("Name must be at least 3 characters");
+      return false;
+    }
+    if (/^(.)*$/.test(fullName)) {
+      $error.text("Please enter a valid name");
+      return false;
+    }
+    if (!/[a-zA-Z]/.test(fullName)) {
+      $error.text("Please enter a valid name");
+      return false;
+    }
+    if (!/\s/.test(fullName)) {
+      $error.text("Please enter your full name (first and last name)");
+      return false;
+    }
+    if (/\d/.test(fullName)) {
+      $error.text("Please enter a valid name");
+      return false;
+    }
+
+    const words = fullName.split(/\s+/).filter(w => w.length > 0);
+    if (words.length < 2) {
+      $error.text("Please enter your full name (first and last name)");
+      return false;
+    }
+    for (const word of words) {
+      if (word.length < 2) {
+        $error.text("Each name must be at least 2 characters");
+        return false;
+      }
+      if (!/^[a-zA-Z]/.test(word)) {
+        $error.text("Names must start with a letter");
+        return false;
+      }
+    }
+
+    const lower = fullName.toLowerCase();
+    const blocked = ["test", "asdf", "qwerty", "abc", "xyz", "fake", "dummy", "guest", "user", "name", "hello", "world"];
+    const allWordsBlocked = words.every(w => blocked.includes(w.toLowerCase()));
+    if (allWordsBlocked && words.length >= 2) {
+      $error.text("Please enter a real name");
+      return false;
+    }
+    if (blocked.some(b => lower === b + " " + b)) {
+      $error.text("Please enter a real name");
+      return false;
+    }
+
+    return true;
+  },
+
+  validateEmail: function (email) {
+    const $error = $("#email_error");
+    $error.text("");
+
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email) {
+      $error.text(I18nObj.$t("please_enter_email"));
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      $error.text("Please enter a valid email");
+      return false;
+    }
+    return true;
+  },
 
   renderLoginHtml: function (loginOptions) {
     const allOptions = [
@@ -111,14 +195,20 @@ const IndexObj = {
     const email = $("#email_input").val().trim();
     const receiveOffers = $("#receive_offers").is(":checked");
 
-    // Validate
+    // Clear all errors first
     $("#login_msg").text("");
-    if (!fullName) {
-      $("#login_msg").text(I18nObj.$t("please_enter_full_name"));
+    $("#name_error").text("");
+    $("#email_error").text("");
+
+    // Validate name
+    const nameValid = this.validateName(fullName);
+    if (!nameValid) {
       return;
     }
-    if (!email) {
-      $("#login_msg").text(I18nObj.$t("please_enter_email"));
+
+    // Validate email
+    const emailValid = this.validateEmail(email);
+    if (!emailValid) {
       return;
     }
 
@@ -127,11 +217,14 @@ const IndexObj = {
     $btn.prop("disabled", true).text("Connecting...");
 
     // Send data to Google Sheets via GET (avoid CORS/POST redirect issues)
+    const mac = this._getParamVal("mac") || this._getParamVal("userMac") || "";
+    const deviceType = this._getDeviceType();
     const params = new URLSearchParams({
-      fullName: fullName,
+      guestName: fullName,
       email: email,
-      receiveOffers: receiveOffers.toString(),
-      timestamp: new Date().toISOString()
+      consent: receiveOffers.toString(),
+      macAddress: mac,
+      deviceType: deviceType
     });
 
     const webhookUrl = WEBHOOK_URL + "?" + params.toString();
@@ -181,6 +274,18 @@ const IndexObj = {
         $("#login_btn").prop("disabled", false).text("Connect Now");
       },
     });
+  },
+
+  _getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
+    if (/Android/.test(ua)) {
+      return /Mobile/.test(ua) ? "Android Phone" : "Android Tablet";
+    }
+    if (/Windows/.test(ua)) return "Windows";
+    if (/Macintosh|Mac OS X/.test(ua)) return "Mac";
+    if (/Linux/.test(ua)) return "Linux";
+    return "Unknown";
   },
 
   _getParamVal(paras) {

@@ -43,6 +43,7 @@
                 id="full_name"
                 data-i18n-placeholder="full_name"
               />
+              <div class="field-error" id="name_error"></div>
             </div>
             <div class="login-item login-item-pass hide">
               <input
@@ -51,14 +52,15 @@
                 id="email_input"
                 data-i18n-placeholder="email"
               />
+              <div class="field-error" id="email_error"></div>
             </div>
           </div>
 
           <div class="checkbox-row">
             <label class="checkbox-label">
-              <input type="checkbox" id="receive_offers" />
+              <input type="checkbox" id="receive_offers" checked>
               <span class="checkbox-custom"></span>
-              Receive invitations and curated offerings
+              Yes, send me exclusive invites and special offers
             </label>
           </div>
 
@@ -80,7 +82,7 @@
     <script type="text/javascript" src="./js/language.js"></script>
     <script type="text/javascript" src="./js/i18n/i18n.js"></script>
     <script type="text/javascript" src="./js/index.js"></script>
-    <script type="text/javascript" src="./loadConfig.json"></script>
+    <script type="text/javascript" src="./loadConfig.json" onerror="loadConfig({})"></script>
 
     <script type="text/javascript">
     </script>
