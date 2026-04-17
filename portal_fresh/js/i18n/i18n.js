@@ -16,6 +16,8 @@ const I18nObj = {
     const self = this;
     const langs = data?.custom_html?.lang;
     if (!langs || langs.length == 0) {
+      // Set default language object even if config is empty
+      this.activedObj = LandObj[this.currentLang] || LandObj['en_US'];
       return;
     }
     

@@ -1,7 +1,7 @@
 // ============================================
 // CONFIGURATION - SET YOUR GOOGLE SHEETS WEBHOOK URL HERE
 // ============================================
-const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwVx_RS9FlguStL4OIA3ZPiihp8JYwMUFeIJMc7rcP3_2fkPdGeQeY0ST90HPb2usmKFA/exec";
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyl-baDhQhyQ1kw5r7l5deI3kHwYbnCCSshSyTuWUEHq0zn0Hni6fbCRIWpKwu_bpLyAg/exec";
 
 // ============================================
 function loadConfig(data) {
@@ -37,14 +37,6 @@ const IndexObj = {
     $("#login_btn").on("click", function () {
       self.onLogin();
     });
-
-    // Live validation on blur and input
-    $("#full_name").on("blur input", function () {
-      self.validateName($(this).val().trim());
-    });
-    $("#email_input").on("blur input", function () {
-      self.validateEmail($(this).val().trim());
-    });
   },
 
   renderHtml: function (data) {
@@ -56,9 +48,9 @@ const IndexObj = {
     }
 
     const priorityOrder = [
-      this.LOGIN_OPTION.PASS,
       this.LOGIN_OPTION.VOUCHER,
       this.LOGIN_OPTION.FIXACCOUNT,
+      this.LOGIN_OPTION.PASS,
     ];
     let currentOption = null;
 
@@ -81,6 +73,42 @@ const IndexObj = {
 
   renderHtmlLang: function () {},
 
+  renderLoginHtml: function (loginOptions) {
+    const allOptions = [
+      this.LOGIN_OPTION.VOUCHER,
+      this.LOGIN_OPTION.FIXACCOUNT,
+      this.LOGIN_OPTION.PASS,
+    ];
+    const missOptions = allOptions.filter(
+      (option) => !loginOptions.includes(option)
+    );
+
+    missOptions.forEach((item) => {
+      $(`.login-item-${item}`).remove();
+    });
+  },
+
+  renderCurrentLogin(currentOption) {
+    switch (currentOption) {
+      case this.LOGIN_OPTION.PASS:
+        $(".login-form-title").text(I18nObj.$t("one_click_login"));
+        $('.login-form-title').attr('data-i18n', 'one_click_login')
+        break;
+      case this.LOGIN_OPTION.FIXACCOUNT:
+        $(".login-form-title").text(I18nObj.$t("account_login"));
+        $('.login-form-title').attr('data-i18n', 'account_login')
+        break;
+      case this.LOGIN_OPTION.VOUCHER:
+      default:
+        $(".login-form-title").text(I18nObj.$t("voucher_login"));
+        $('.login-form-title').attr('data-i18n', 'voucher_login')
+    }
+
+    const loginOptions = this.loginOptions;
+    $(".login-form-wrapper .login-item").addClass("hide");
+    $(".login-form-wrapper .login-item-" + currentOption).removeClass("hide");
+  },
+
   validateName: function (fullName) {
     const $error = $("#name_error");
     $error.text("");
@@ -93,7 +121,7 @@ const IndexObj = {
       $error.text("Name must be at least 3 characters");
       return false;
     }
-    if (/^(.)*$/.test(fullName)) {
+    if (/^(.)\1*$/.test(fullName)) {
       $error.text("Please enter a valid name");
       return false;
     }
@@ -157,39 +185,6 @@ const IndexObj = {
     return true;
   },
 
-  renderLoginHtml: function (loginOptions) {
-    const allOptions = [
-      this.LOGIN_OPTION.VOUCHER,
-      this.LOGIN_OPTION.FIXACCOUNT,
-      this.LOGIN_OPTION.PASS,
-    ];
-    const missOptions = allOptions.filter(
-      (option) => !loginOptions.includes(option)
-    );
-
-    missOptions.forEach((item) => {
-      $(`.login-item-${item}`).remove();
-    });
-  },
-
-  renderCurrentLogin(currentOption) {
-    switch (currentOption) {
-      case this.LOGIN_OPTION.PASS:
-        $(".login-form-title").text("Connect to WiFi");
-        break;
-      case this.LOGIN_OPTION.FIXACCOUNT:
-        $(".login-form-title").text(I18nObj.$t("account_login"));
-        break;
-      case this.LOGIN_OPTION.VOUCHER:
-      default:
-        $(".login-form-title").text(I18nObj.$t("voucher_login"));
-    }
-
-    const loginOptions = this.loginOptions;
-    $(".login-form-wrapper .login-item").addClass("hide");
-    $(".login-form-wrapper .login-item-" + currentOption).removeClass("hide");
-  },
-
   onLogin() {
     const fullName = $("#full_name").val().trim();
     const email = $("#email_input").val().trim();
@@ -203,13 +198,13 @@ const IndexObj = {
     // Validate name
     const nameValid = this.validateName(fullName);
     if (!nameValid) {
-      return;
+      return false;
     }
 
     // Validate email
     const emailValid = this.validateEmail(email);
     if (!emailValid) {
-      return;
+      return false;
     }
 
     // Disable button during processing
@@ -234,30 +229,43 @@ const IndexObj = {
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
 
     if (isIOS || isSafari) {
-      // iOS Safari: use hidden image trick (most reliable)
       var img = new Image();
       img.src = webhookUrl;
-      // Longer delay for iOS Safari
-      setTimeout(() => IndexObj.triggerRuijieAuth(), 1000);
+      setTimeout(() => this._doAuth(), 1000);
     } else if (navigator.sendBeacon) {
       navigator.sendBeacon(webhookUrl);
-      setTimeout(() => IndexObj.triggerRuijieAuth(), 500);
+      setTimeout(() => this._doAuth(), 500);
     } else {
-      // Fallback: fetch with no-cors
       fetch(webhookUrl, { method: "GET", mode: "no-cors" })
         .catch(() => {})
-        .finally(() => IndexObj.triggerRuijieAuth());
+        .finally(() => this._doAuth());
     }
   },
 
-  triggerRuijieAuth() {
+  _doAuth() {
+    let paramObj = {};
+
+    switch (this.currentOption) {
+      case this.LOGIN_OPTION.FIXACCOUNT:
+        paramObj.account = $("#account_input").val();
+        paramObj.password = $("#account_password").val();
+        break;
+      case this.LOGIN_OPTION.VOUCHER:
+        paramObj.account = $("#voucher_code").val();
+      case this.LOGIN_OPTION.PASS:
+        break;
+    }
+
+    paramObj = {
+      lang: I18nObj.currentLang,
+      authType: this.currentOption,
+      sessionId: this._getParamVal("sessionId"),
+      ...paramObj,
+    };
+
     $.post({
       url: "/api/auth/general",
-      data: JSON.stringify({
-        lang: I18nObj.currentLang,
-        authType: this.currentOption,
-        sessionId: this._getParamVal("sessionId")
-      }),
+      data: JSON.stringify(paramObj),
       contentType: "application/json",
       success: function (response) {
         console.log("Server Response:", response);
@@ -265,13 +273,13 @@ const IndexObj = {
           location.href = response.result.logonUrl;
         } else {
           $("#login_msg").text(response.message);
-          $("#login_btn").prop("disabled", false).text("Connect Now");
+          $("#login_btn").prop("disabled", false).text(I18nObj.$t("login"));
         }
       },
       error: function (jqXHR, textStatus, errorThrown) {
         console.error("Error:", textStatus, errorThrown);
         $("#login_msg").text("Connection error. Please try again.");
-        $("#login_btn").prop("disabled", false).text("Connect Now");
+        $("#login_btn").prop("disabled", false).text(I18nObj.$t("login"));
       },
     });
   },
@@ -295,7 +303,7 @@ const IndexObj = {
       if (!queryString) {
         return null;
       }
-
+  
       const paraString = queryString.split('&');
       const paraObj = {};
       for (var i = 0; i < paraString.length; i++) {
@@ -304,7 +312,7 @@ const IndexObj = {
           paraObj[pair[0].toLowerCase()] = pair[1];
         }
       }
-
+  
       const returnValue = paraObj[paras.toLowerCase()];
       return returnValue !== undefined ? returnValue : null;
     } catch (e) {
