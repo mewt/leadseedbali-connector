@@ -2,3 +2,5 @@
 __MACOSX/
 .DS_Store
 .qwen/
+.session
+.session-ses_26c1.md
